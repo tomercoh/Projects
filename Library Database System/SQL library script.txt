@@ -261,5 +261,3 @@ insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000002, 0.7
 insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000003, 0.50, '04/10/2022');
 insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000005, 0.25, '04/10/2022');
 insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000007, 1.00, '04/06/2022');
-
-
