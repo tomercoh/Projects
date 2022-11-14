@@ -1,0 +1,265 @@
+-- start with a clean slate
+-- tables are dropped in this specific order for a reason
+-- we cannot remove a table until all tables that reference it have been removed
+-- in other words, children must be dropped before parents
+
+drop table fines;
+drop table rentals;
+drop table authorships;
+drop table items;
+drop table books;
+drop table discs;
+drop table authors;
+drop table publications;
+drop table users;
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'MM/DD/YYYY';
+
+-- create table statements
+
+create table publications (
+    pub_id      int             primary key,       --publication id numbers will be five digits, starting with 10001
+    pub_type    char(4)         check (pub_type in ('BOOK', 'DISC')),
+    pub_title   varchar(100)    not null,
+    pub_genre   varchar(20),
+    pub_year    int,
+    pub_edition varchar(10)
+);
+
+create table books (
+    pub_id              int         primary key,      --publication id numbers will be five digits, starting with 10001
+    book_isbn           numeric(13,0),
+    book_call_num       varchar(20),
+    book_is_hardback    int         check (book_is_hardback in (0, 1)),
+    book_num_pages      int         check (book_num_pages > 0)
+);
+
+create table discs (
+    pub_id              int         primary key,      --publication id numbers will be five digits, starting with 10001
+    disc_type           char(3)     check (disc_type in ('CD', 'DVD', 'BD'))
+);
+
+create table authors (
+    author_id           int         primary key,      --author id numbers will be five digits, starting with 20001
+    author_lname        varchar(50) not null,
+    author_fname        varchar(50) not null
+);
+
+create table authorships (
+    pub_id              int,         --publication id numbers will be five digits, starting with 10001
+    author_id           int,         --author id numbers will be five digits, starting with 20001
+    primary key (pub_id, author_id)
+);
+
+create table items (
+    item_id             int         primary key,    -- item id numbers will be six digits: the five-digit pub_id, and then an extra digit
+    pub_id              int         not null,
+    item_condition      char(4)     not null        check (item_condition in ('NEW', 'GOOD', 'FAIR', 'POOR', 'LOST')),
+    item_value          numeric(7, 2)
+);
+
+create table users (
+    user_id             char(9)     primary key,    -- user id will be in the format of a UT Dallas NetID
+    user_lname          varchar(50) not null,
+    user_fname          varchar(50) not null,
+    user_email          varchar(80) not null,
+    user_is_student     int         not null        check (user_is_student in (0, 1)),
+    user_is_faculty     int         not null        check (user_is_faculty in (0, 1)),
+    user_has_disability int         not null        check (user_has_disability in (0, 1))
+);
+
+create table rentals (
+    rental_id           int         primary key,    -- rental id numbers will be seven digits, starting with 1000001
+    user_id             char(9)     not null,
+    item_id             int         not null,
+    rental_start_date   date        not null,
+    rental_due_date     date        not null,
+    rental_return_date  date
+);
+
+create table fines (
+    rental_id           int         primary key,    -- rental id numbers will be seven digits, starting with 1000001
+    fine_amt_due        numeric(4,2)    not null,
+    fine_date_paid      date
+);
+
+
+-- alter table statements to add foreign keys
+alter table books add foreign key(pub_id) references publications(pub_id);
+alter table discs add foreign key(pub_id) references publications(pub_id);
+
+alter table authorships add foreign key(pub_id) references publications(pub_id);
+alter table authorships add foreign key(author_id) references authors(author_id);
+
+alter table items add foreign key(pub_id) references publications(pub_id);
+
+alter table rentals add foreign key(user_id) references users(user_id);
+alter table rentals add foreign key(item_id) references items(item_id);
+
+alter table fines add foreign key(rental_id) references rentals(rental_id);
+
+
+-- insert values into tables
+
+-- these ID numbers are manually created and arbitrarily decided
+-- publication 10001: 
+insert into publications (pub_id, pub_type, pub_title, pub_edition) values (10001, 'BOOK', 'Database Systems', '13th');
+insert into books (pub_id, book_isbn, book_is_hardback) values (10001, 9781337627900, 1);
+
+-- publication 10002:
+insert into publications (pub_id, pub_type, pub_title, pub_year) values (10002, 'DISC', 'Hidden Figures', 2016);
+insert into discs (pub_id, disc_type) values (10002, 'DVD');
+
+-- publication 10003:  -- https://www.directtextbook.com/isbn/9781439875902
+insert into publications (pub_id, pub_type, pub_title, pub_edition, pub_year) values (10003, 'BOOK', 'Probability and Statistics for Computer Scientists', '2nd', 2013);
+insert into books (pub_id, book_isbn, book_is_hardback, book_num_pages) values (10003, 9781439875902, 1, 449);
+
+-- publication 10004:
+insert into publications (pub_id, pub_type, pub_title, pub_edition, pub_genre, pub_year) values (10004, 'BOOK', 'Fundamentals of Corporate Finance', '4th', 'Business & Economics', 2003);
+insert into books (pub_id, book_isbn, book_is_hardback, book_num_pages) values (10004, 9780071215589, 1, 736);
+
+-- publication 10005:
+insert into publications (pub_id, pub_type, pub_title, pub_edition, pub_year) values (10005, 'BOOK', 'Systems Analysis and Design: An Object-Oriented Approach with UML', '5th', 2015);
+insert into books (pub_id, book_isbn, book_is_hardback, book_num_pages) values (10005, 9781118804674, 1, 507);
+
+-- publication 10006:
+insert into publications (pub_id, pub_type,pub_title, pub_year) values (10006, 'DISC', 'Beyond the Wall', 2016);
+insert into discs (pub_id, disc_type) values (10006, 'DVD');
+
+-- publication 10007:
+insert into publications (pub_id, pub_type, pub_title, pub_year) values (10007, 'DISC', 'The Imitation Game', 2015);
+insert into discs (pub_id, disc_type) values (10007, 'DVD');
+
+-- publication 10008:
+insert into publications (pub_id, pub_type, pub_title, pub_year) values (10008, 'DISC', 'A Beautiful Mind', 2001);
+insert into discs (pub_id, disc_type) values (10008, 'DVD');
+
+-- publication 10009:
+insert into publications (pub_id, pub_type, pub_title, pub_edition, pub_year) values (10009, 'BOOK', 'International Business', '1st',2015);
+insert into books (pub_id, book_isbn, book_num_pages) values (10009, 9781259317224, 560);
+
+-- publication 10010:
+-- Mahin (include an entry in publications, as well as an entry in the appropriate subtype table, books or discs)
+
+-- publication 10011:
+-- Mahin (include an entry in publications, as well as an entry in the appropriate subtype table, books or discs)
+
+-- publication 10012:
+-- Mahin (include an entry in publications, as well as an entry in the appropriate subtype table, books or discs)
+
+-- author 20001:
+insert into authors (author_id, author_lname, author_fname) values (20001, 'Marcus', 'Alan');
+insert into authorships (pub_id, author_id) values (10004, 20001);
+
+-- author 20002:
+insert into authors (author_id, author_lname, author_fname) values (20002, 'Dennis', 'Alan');
+insert into authorships (pub_id, author_id) values (10005, 20002);
+
+-- author 20003:
+insert into authors (author_id, author_lname, author_fname) values (20003, 'Phillips', 'Jenny');
+insert into authorships (pub_id, author_id) values (10006, 20003);
+
+-- author 20004:
+insert into authors (author_id, author_lname, author_fname) values (20004, 'Coronel', 'Carlos');
+insert into authorships (pub_id, author_id) values (10001, 20004);
+
+-- author 20005:
+insert into authors (author_id, author_lname, author_fname) values (20005, 'Morris', 'Steven');
+insert into authorships (pub_id, author_id) values (10001, 20005);
+
+-- author 20006:
+insert into authors (author_id, author_lname, author_fname) values (20006, 'Melfi', 'Theodore');
+insert into authorships (pub_id, author_id) values (10002, 20006);
+
+-- author 20007:
+insert into authors (author_id, author_lname, author_fname) values (20007, 'Baron', 'Michael');
+insert into authorships (pub_id, author_id) values (10003, 20007);
+
+-- author 20008:
+insert into authors (author_id, author_lname, author_fname) values (20008, 'Geringer', 'Michael');
+insert into authorships (pub_id, author_id) values (10009, 20008);
+
+-- author 20009:
+insert into authors (author_id, author_lname, author_fname) values (20009, 'McNett', 'Jeanne');
+insert into authorships (pub_id, author_id) values (10009, 20009);
+
+-- author 20010:
+insert into authors (author_id, author_lname, author_fname) values (20010, 'Minor', 'Michael');
+insert into authorships (pub_id, author_id) values (10009, 20010);
+
+-- author 20011:
+insert into authors (author_id, author_lname, author_fname) values (20011, 'Ball', 'Donald');
+insert into authorships (pub_id, author_id) values (10009, 20011);
+
+-- users
+insert into users (user_id, user_email, user_lname, user_fname, user_is_student, user_is_faculty, user_has_disability) values ('abc185352', 'abc185352@somecollege.edu', 'Doe', 'John', 1, 0, 0);
+insert into users (user_id, user_email, user_lname, user_fname, user_is_student, user_is_faculty, user_has_disability) values ('def156984', 'def156984@somecollege.edu', 'Smith', 'Andrew', 1, 0, 0);
+insert into users (user_id, user_email, user_lname, user_fname, user_is_student, user_is_faculty, user_has_disability) values ('ghi658294', 'ghi658294@somecollege.edu', 'Gilbert', 'Stan', 1, 0, 0);
+insert into users (user_id, user_email, user_lname, user_fname, user_is_student, user_is_faculty, user_has_disability) values ('jkl205694', 'jkl205694@somecollege.edu', 'Grants', 'Steven', 1, 0, 0);
+insert into users (user_id, user_email, user_lname, user_fname, user_is_student, user_is_faculty, user_has_disability) values ('mno635987', 'mno635987@somecollege.edu', 'Waters', 'Ashley', 0, 1, 0);
+
+-- item 100010: 
+insert into items (item_id, pub_id, item_condition, item_value) values (100010, 10001, 'GOOD', 140);
+
+-- item 100011: 
+insert into items (item_id, pub_id, item_condition, item_value) values (100011, 10001, 'FAIR', 140);
+
+-- item 100020:
+insert into items (item_id, pub_id, item_condition, item_value) values (100020, 10002, 'NEW', 8);
+
+-- item 100030:
+insert into items (item_id, pub_id, item_condition) values (100030, 10003, 'LOST');
+
+-- item 100040:
+insert into items (item_id, pub_id, item_condition, item_value) values (100040, 10004, 'FAIR', 32);
+
+-- item 100050:
+insert into items (item_id, pub_id, item_condition, item_value) values (100050, 10005, 'GOOD', 62);
+
+-- item 100060:
+insert into items (item_id, pub_id, item_condition, item_value) values (100060, 10006, 'POOR', 10);
+
+-- item 100070:
+insert into items (item_id, pub_id, item_condition, item_value) values (100070, 10007, 'GOOD', 5);
+
+-- item 100080:
+insert into items (item_id, pub_id, item_condition, item_value) values (100080, 10008, 'NEW', 7);
+
+-- item 100090:
+insert into items (item_id, pub_id, item_condition, item_value) values (100090, 10009, 'FAIR', 10);
+
+-- rental 1000001
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date, rental_return_date) values (1000001, 'def156984', 100040, '01/01/2022', '01/31/2022', '01/12/2022');
+
+-- rental 1000002
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date, rental_return_date) values (1000002, 'def156984', 100050, '03/03/2022', '04/02/2022', '04/05/2022');
+
+-- rental 1000003
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date, rental_return_date) values (1000003, 'def156984', 100060, '04/01/2022', '04/08/2022', '04/10/2022');
+
+-- rental 1000004
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date, rental_return_date) values (1000004, 'abc185352', 100010, '02/01/2022', '03/03/2022', '02/17/2022');
+
+-- rental 1000005
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date, rental_return_date) values (1000005, 'abc185352', 100020, '04/02/2022', '04/09/2022', '04/10/2022');
+
+-- rental 1000006
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date) values (1000006, 'ghi658294', 100030, '04/08/2022', '05/08/2022');
+
+-- rental 1000007
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date, rental_return_date) values (1000007, 'ghi658294', 100010, '03/03/2022', '04/02/2022', '04/06/2022');
+
+-- rental 1000008
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date) values (1000008, 'ghi658294', 100010, '04/05/2022', '05/05/2022');
+
+-- rental 1000009
+insert into rentals (rental_id, user_id, item_id, rental_start_date, rental_due_date) values (1000009, 'mno635987', 100011, '01/18/2022', '04/14/2022');
+
+
+-- fines
+insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000002, 0.75, '04/05/2022');
+insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000003, 0.50, '04/10/2022');
+insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000005, 0.25, '04/10/2022');
+insert into fines (rental_id, fine_amt_due, fine_date_paid) values (1000007, 1.00, '04/06/2022');
+
+
